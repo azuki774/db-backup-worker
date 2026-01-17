@@ -1,0 +1,69 @@
+name: CI - PostgreSQL
+
+on:
+  pull_request:
+    paths:
+      - 'postgres-backup/**'
+      - '.github/workflows/ci-postgres.yml'
+      - 'scripts/**'
+
+env:
+  IMAGE_NAME: pg-dump-to-s3
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        postgres-version:
+          - '18.3'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: |
+          docker build \
+            --build-arg POSTGRES_VERSION=${{ matrix.postgres-version }} \
+            -t ${{ env.IMAGE_NAME }}:test \
+            -f postgres-backup/Dockerfile \
+            .
+
+      - name: Start test database
+        run: |
+          docker compose -f ./postgres-backup/compose.test.yml up -d
+
+      - name: Wait for database to be ready
+        run: |
+          for i in {1..30}; do
+            if docker exec test-postgres pg_isready -U postgres; then
+              echo "Database is ready"
+              exit 0
+            fi
+            echo "Waiting for database... ($i/30)"
+            sleep 2
+          done
+          echo "Database did not become ready"
+          exit 1
+
+      - name: Run backup test
+        run: |
+          docker run --rm \
+            --network host \
+            -e DB_HOST=localhost \
+            -e DB_PORT=5432 \
+            -e DB_USER=postgres \
+            -e DB_PASSWORD=testpass \
+            -e DB_NAME=testdb \
+            -e BACKUP_NAME=test_backup \
+            -e SKIP_S3_UPLOAD=true \
+            ${{ env.IMAGE_NAME }}:test
+
+      - name: Clean up
+        if: always()
+        run: |
+          docker compose -f ./postgres-backup/compose.test.yml down -v

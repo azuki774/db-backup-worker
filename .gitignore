@@ -1,0 +1,29 @@
+# Backup files
+*.sql
+*.sql.gz
+*.sql.bz2
+*.dump
+
+# Test files
+test/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
+
+# Docker
+*.tar
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
