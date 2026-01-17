@@ -45,24 +45,12 @@ flowchart TD
 ## イメージ一覧
 
 ### MariaDB バックアップイメージ
-
-| タグ | MariaDB バージョン |
-|------|-------------------|
-| `ghcr.io/<repo>/mariadb-dump-to-s3:v1.2.0-maria10.11` | MariaDB 10.11 |
-| `ghcr.io/<repo>/mariadb-dump-to-s3:v1.2.0-maria11.4` | MariaDB 11.4 |
-| `ghcr.io/<repo>/mariadb-dump-to-s3:latest-maria11.4` | MariaDB 11.4 (最新) |
+- TBD
 
 詳細: [mariadb-backup/README.md](mariadb-backup/README.md)
 
 ### PostgreSQL バックアップイメージ
-
-| タグ | PostgreSQL バージョン |
-|------|---------------------|
-| `ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg14` | PostgreSQL 14 |
-| `ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg15` | PostgreSQL 15 |
-| `ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16` | PostgreSQL 16 |
-| `ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg17` | PostgreSQL 17 |
-| `ghcr.io/<repo>/pg-dump-to-s3:latest-pg16` | PostgreSQL 16 (最新) |
+- TBD
 
 詳細: [postgres-backup/README.md](postgres-backup/README.md)
 
