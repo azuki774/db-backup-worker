@@ -19,11 +19,14 @@ PostgreSQL データベースのバックアップを取得し、Amazon S3 に�
 | `DB_USER` | Yes | - | データベースのユーザー名 |
 | `DB_PASSWORD` | Yes | - | データベースのパスワード |
 | `DB_NAME` | Yes | - | バックアップするデータベース名 |
-| `S3_BUCKET` | Yes | - | S3 バケット名 |
+| `BACKUP_NAME` | Yes | - | バックアップファイル名（拡張子なし、例: `daily_backup`） |
+| `BUCKET_NAME` | Yes* | - | S3 バケット名（`SKIP_S3_UPLOAD=false`時は必須） |
+| `BUCKET_DIR` | Yes* | - | S3 バケット内のディレクトリ/プレフィックス（`SKIP_S3_UPLOAD=false`時は必須） |
 | `SKIP_S3_UPLOAD` | No | false | S3 アップロードをスキップするかどうか |
 | `AWS_ACCESS_KEY_ID` | No | - | AWS アクセスキー |
 | `AWS_SECRET_ACCESS_KEY` | No | - | AWS シークレットキー |
 | `AWS_REGION` | No | - | AWS リージョン |
+| `BUCKET_URL` | No | - | カスタム S3 エンドポイント URL (MinIOなど) |
 
 ## 使用例
 
@@ -36,24 +39,12 @@ docker run --rm \
   -e DB_USER=postgres \
   -e DB_PASSWORD=secret \
   -e DB_NAME=mydb \
-  -e S3_BUCKET=my-backup-bucket \
-  -e S3_PREFIX=postgres/ \
+  -e BACKUP_NAME=daily_backup \
+  -e BUCKET_NAME=my-backup-bucket \
+  -e BUCKET_DIR=postgres/ \
   -e AWS_ACCESS_KEY_ID=AKIA... \
   -e AWS_SECRET_ACCESS_KEY=secret \
   -e AWS_REGION=us-east-1 \
-  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16
-```
-
-### 全データベースをバックアップ
-
-```bash
-docker run --rm \
-  -e DB_HOST=db.example.com \
-  -e DB_PORT=5432 \
-  -e DB_USER=postgres \
-  -e DB_PASSWORD=secret \
-  -e S3_BUCKET=my-backup-bucket \
-  -e S3_PREFIX=postgres/all/ \
   ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16
 ```
 
@@ -66,10 +57,29 @@ docker run --rm \
   -e DB_USER=postgres \
   -e DB_PASSWORD=secret \
   -e DB_NAME=mydb \
-  -e S3_BUCKET=my-backup-bucket \
-  -e S3_PREFIX=postgres/ \
+  -e BACKUP_NAME=daily_backup \
+  -e BUCKET_NAME=my-backup-bucket \
+  -e BUCKET_DIR=postgres/ \
   -e AWS_REGION=us-east-1 \
   --network host \
+  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16
+```
+
+### MinIO などの互換 S3 を使用
+
+```bash
+docker run --rm \
+  -e DB_HOST=db.example.com \
+  -e DB_PORT=5432 \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=secret \
+  -e DB_NAME=mydb \
+  -e BACKUP_NAME=daily_backup \
+  -e BUCKET_NAME=my-backup-bucket \
+  -e BUCKET_DIR=postgres/ \
+  -e BUCKET_URL=http://minio:9000 \
+  -e AWS_ACCESS_KEY_ID=minioadmin \
+  -e AWS_SECRET_ACCESS_KEY=minioadmin \
   ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16
 ```
 
@@ -77,11 +87,9 @@ docker run --rm \
 
 このイメージは、S3 にアップロードする前に以下の検証を行います：
 
-1. **ファイルサイズチェック**: バックアップファイルが `MIN_BACKUP_SIZE_BYTES` 以上であること
-2. **署名チェック**: ファイルが有効な PostgreSQL ダンプであること
-3. **スキーマオブジェクトチェック**: ダンプにスキーマオブジェクト（テーブル、インデックスなど）が含まれていること
-4. **データチェック**: ダンプにデータ（COPY 文）が含まれているか確認
-5. **ダンプ形式チェック**: ダンプが正しく完了しているか確認
+1. **ファイルサイズチェック**: バックアップファイルのサイズを確認
+2. **署名チェック**: ファイルが有効な PostgreSQL ダンプであることを確認（`PostgreSQL database dump` 文字列のチェック）
+3. **SQL ステートメントチェック**: ダンプに有効な SQL ステートメント（`SET` コマンドなど）が含まれていることを確認
 
 ## 開発とテスト
 
@@ -89,7 +97,7 @@ docker run --rm \
 # テスト環境を構築
 docker compose -f docker-compose.test.yml up -d
 
-# テスト実行
+# テスト実行（S3 アップロードをスキップ）
 docker build -t pg-dump-to-s3:test .
 docker run --rm \
   --network container:test-postgres \
@@ -98,8 +106,7 @@ docker run --rm \
   -e DB_USER=postgres \
   -e DB_PASSWORD=testpass \
   -e DB_NAME=testdb \
-  -e S3_BUCKET=test-bucket \
-  -e S3_PREFIX=test \
+  -e BACKUP_NAME=test_backup \
   -e SKIP_S3_UPLOAD=true \
   pg-dump-to-s3:test
 

@@ -162,8 +162,6 @@ docker run --rm \
   -e DB_PASSWORD=testpass \
   -e DB_NAME=testdb \
   -e BACKUP_NAME=test_backup \
-  -e BUCKET_NAME=test-bucket \
-  -e BUCKET_DIR=test \
   -e SKIP_S3_UPLOAD=true \
   mariadb-dump-to-s3:test
 docker compose -f docker-compose.test.yml down -v
@@ -183,8 +181,6 @@ docker run --rm \
   -e DB_PASSWORD=testpass \
   -e DB_NAME=testdb \
   -e BACKUP_NAME=test_backup \
-  -e BUCKET_NAME=test-bucket \
-  -e BUCKET_DIR=test \
   -e SKIP_S3_UPLOAD=true \
   pg-dump-to-s3:test
 docker compose -f docker-compose.test.yml down -v
@@ -202,8 +198,8 @@ docker compose -f docker-compose.test.yml down -v
 | `DB_PASSWORD` | Yes | - | データベースのパスワード |
 | `DB_NAME` | Yes | - | バックアップするデータベース名 |
 | `BACKUP_NAME` | Yes | - | バックアップファイル名（拡張子なし） |
-| `BUCKET_NAME` | Yes | - | S3 バケット名 |
-| `BUCKET_DIR` | Yes | - | S3 オブジェクトのディレクトリ/プレフィックス |
+| `BUCKET_NAME` | Yes* | - | S3 バケット名（`SKIP_S3_UPLOAD=false`時は必須） |
+| `BUCKET_DIR` | Yes* | - | S3 オブジェクトのディレクトリ/プレフィックス（`SKIP_S3_UPLOAD=false`時は必須） |
 | `AWS_ACCESS_KEY_ID` | No | - | AWS アクセスキー |
 | `AWS_SECRET_ACCESS_KEY` | No | - | AWS シークレットキー |
 | `AWS_REGION` | No | - | AWS リージョン |
@@ -223,7 +219,7 @@ docker compose -f docker-compose.test.yml down -v
 
 1. ファイルサイズチェック
 2. 署名チェック（PostgreSQL ダンプの確認）
-3. 終了マーカーチェック（ダンプ完了の確認）
+3. SQL ステートメントチェック（`SET` コマンドなどが含まれていることを確認）
 
 ## セキュリティ
 
