@@ -1,0 +1,30 @@
+services:
+  test-postgres:
+    image: postgres:18.1-alpine3.23
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: testdb
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  test-backup:
+    build:
+      context: ..
+      dockerfile: postgres-backup/Dockerfile
+      args:
+        POSTGRES_VERSION: 18.1
+    environment:
+      DB_HOST: test-postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: testpass
+      DB_NAME: testdb
+      BACKUP_NAME: test_backup
+      SKIP_S3_UPLOAD: true
+    depends_on:
+      test-postgres:
+        condition: service_healthy

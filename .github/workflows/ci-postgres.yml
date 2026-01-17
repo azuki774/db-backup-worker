@@ -1,0 +1,32 @@
+name: CI - PostgreSQL
+
+on:
+  pull_request:
+    paths:
+      - 'postgres-backup/**'
+      - '.github/workflows/ci-postgres.yml'
+      - 'scripts/**'
+
+env:
+  IMAGE_NAME: pg-dump-to-s3
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        postgres-version:
+          - '18.1'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run tests with Compose
+        run: |
+          docker compose -f ./postgres-backup/compose-ci.yml -p ci-test up --abort-on-container-exit --exit-code-from test-backup
+
+      - name: Clean up
+        if: always()
+        run: |
+          docker compose -f ./postgres-backup/compose-ci.yml -p ci-test down -v
