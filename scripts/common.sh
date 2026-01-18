@@ -54,6 +54,7 @@ verify_aws_credentials() {
 send_discord_notification() {
     local message="$1"
     local color="$2"  # decimal color (e.g., 3066993 for green, 15158332 for red)
+    local content="$3"  # optional content field for mentions
     
     if [ -z "${DISCORD_WEBHOOK}" ]; then
         log_debug "DISCORD_WEBHOOK not set, skipping notification"
@@ -64,6 +65,7 @@ send_discord_notification() {
     
     local payload=$(cat <<EOF
 {
+  "content": "${content}",
   "embeds": [{
     "title": "PostgreSQL Backup Notification",
     "description": "${message}",
@@ -120,5 +122,5 @@ send_discord_failure() {
     
     message+="Please check the logs for details."
     
-    send_discord_notification "${message}" "15158332"  # Red color
+    send_discord_notification "${message}" "15158332" "@here"  # Red color with @here mention
 }
