@@ -19,8 +19,35 @@ set -e
 #   AWS_SECRET_ACCESS_KEY  - AWS secret access key
 #   BUCKET_URL       - Custom S3 endpoint URL (e.g., "http://minio:9000" for MinIO)
 #   SKIP_S3_UPLOAD   - Skip S3 upload if set to "true" (default: "false")
+#   DISCORD_WEBHOOK  - Discord webhook URL for notifications (optional)
 
 source /app/scripts/common.sh
+
+# Track backup success status
+BACKUP_SUCCESS=0
+S3_URI=""
+BACKUP_SIZE=""
+
+# Error handler - called on script failure
+error_handler() {
+    local exit_code=$?
+    if [ ${exit_code} -ne 0 ] && [ ${BACKUP_SUCCESS} -eq 0 ]; then
+        log_error "Backup process failed with exit code ${exit_code}"
+        send_discord_failure "${DB_NAME}"
+    fi
+}
+
+# Success handler - called on script exit
+exit_handler() {
+    local exit_code=$?
+    if [ ${exit_code} -eq 0 ] && [ ${BACKUP_SUCCESS} -eq 1 ]; then
+        send_discord_success "${DB_NAME}" "${BACKUP_FILE}" "${S3_URI}" "${BACKUP_SIZE}"
+    fi
+}
+
+# Set up trap handlers
+trap 'error_handler' ERR
+trap 'exit_handler' EXIT
 
 log_info "Starting PostgreSQL backup to S3..."
 
@@ -47,8 +74,13 @@ fi
 /app/backup.sh "${DB_NAME}" "${BACKUP_PATH}"
 /app/verify.sh "${BACKUP_PATH}"
 
+# Get backup file size after verification
+BACKUP_SIZE=$(stat -f%z "${BACKUP_PATH}" 2>/dev/null || stat -c%s "${BACKUP_PATH}" 2>/dev/null)
+
 if [ "${SKIP_S3_UPLOAD}" = "false" ]; then
     /app/scripts/s3-upload.sh "${BACKUP_PATH}"
+    # Set S3 URI for success notification
+    S3_URI="s3://${BUCKET_NAME}/${BUCKET_DIR}/${BACKUP_FILE}"
 else
     log_info "Skipping S3 upload as requested"
     log_info "Backup file available at: ${BACKUP_PATH}"
@@ -56,3 +88,6 @@ else
 fi
 
 log_info "Backup completed successfully"
+
+# Mark backup as successful
+BACKUP_SUCCESS=1

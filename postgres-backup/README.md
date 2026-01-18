@@ -27,6 +27,7 @@ PostgreSQL データベースのバックアップを取得し、Amazon S3 に�
 | `AWS_SECRET_ACCESS_KEY` | No | - | AWS シークレットキー |
 | `AWS_REGION` | No | - | AWS リージョン |
 | `BUCKET_URL` | No | - | カスタム S3 エンドポイント URL (MinIOなど) |
+| `DISCORD_WEBHOOK` | No | - | Discord Webhook URL（バックアップ成功/失敗時に通知） |
 
 ## 使用例
 
@@ -80,6 +81,25 @@ docker run --rm \
   -e BUCKET_URL=http://minio:9000 \
   -e AWS_ACCESS_KEY_ID=minioadmin \
   -e AWS_SECRET_ACCESS_KEY=minioadmin \
+  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16
+```
+
+### Discord 通知を有効化
+
+```bash
+docker run --rm \
+  -e DB_HOST=db.example.com \
+  -e DB_PORT=5432 \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=secret \
+  -e DB_NAME=mydb \
+  -e BACKUP_NAME=daily_backup \
+  -e BUCKET_NAME=my-backup-bucket \
+  -e BUCKET_DIR=postgres/ \
+  -e AWS_ACCESS_KEY_ID=AKIA... \
+  -e AWS_SECRET_ACCESS_KEY=secret \
+  -e AWS_REGION=us-east-1 \
+  -e DISCORD_WEBHOOK=https://discord.com/api/webhooks/... \
   ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16
 ```
 

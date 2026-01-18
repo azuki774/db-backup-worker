@@ -49,3 +49,76 @@ verify_aws_credentials() {
         exit 1
     fi
 }
+
+# Send Discord notification
+send_discord_notification() {
+    local message="$1"
+    local color="$2"  # decimal color (e.g., 3066993 for green, 15158332 for red)
+    
+    if [ -z "${DISCORD_WEBHOOK}" ]; then
+        log_debug "DISCORD_WEBHOOK not set, skipping notification"
+        return 0
+    fi
+    
+    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    
+    local payload=$(cat <<EOF
+{
+  "embeds": [{
+    "title": "PostgreSQL Backup Notification",
+    "description": "${message}",
+    "color": ${color},
+    "timestamp": "${timestamp}"
+  }]
+}
+EOF
+)
+    
+    log_debug "Sending Discord notification..."
+    if ! curl -sf -X POST "${DISCORD_WEBHOOK}" \
+        -H "Content-Type: application/json" \
+        -d "${payload}" > /dev/null 2>&1; then
+        log_warning "Failed to send Discord notification (this will not affect the backup process)"
+    else
+        log_debug "Discord notification sent successfully"
+    fi
+}
+
+# Send Discord success notification
+send_discord_success() {
+    local db_name="$1"
+    local backup_file="$2"
+    local s3_uri="$3"
+    local file_size="$4"
+    
+    local message="✅ **Backup Successful**\n\n"
+    message+="**Database:** \`${db_name}\`\n"
+    message+="**Backup File:** \`${backup_file}\`\n"
+    
+    if [ -n "${s3_uri}" ]; then
+        message+="**S3 Location:** \`${s3_uri}\`\n"
+    fi
+    
+    if [ -n "${file_size}" ]; then
+        # Convert bytes to human readable format
+        local size_mb=$((file_size / 1024 / 1024))
+        message+="**File Size:** ${size_mb} MB\n"
+    fi
+    
+    send_discord_notification "${message}" "3066993"  # Green color
+}
+
+# Send Discord failure notification
+send_discord_failure() {
+    local db_name="$1"
+    
+    local message="❌ **Backup Failed**\n\n"
+    
+    if [ -n "${db_name}" ]; then
+        message+="**Database:** \`${db_name}\`\n"
+    fi
+    
+    message+="Please check the logs for details."
+    
+    send_discord_notification "${message}" "15158332"  # Red color
+}
