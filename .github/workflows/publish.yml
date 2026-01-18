@@ -62,7 +62,8 @@ jobs:
       - name: Build and push PostgreSQL image
         uses: docker/build-push-action@v5
         with:
-          context: ./postgres-backup
+          context: .
+          file: ./postgres-backup/Dockerfile
           push: true
           build-args: |
             POSTGRES_VERSION=${{ matrix.postgres-version }}
