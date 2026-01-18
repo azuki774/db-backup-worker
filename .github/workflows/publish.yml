@@ -71,7 +71,7 @@ jobs:
           build-args: |
             POSTGRES_VERSION=${{ matrix.postgres-version }}
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/pg-dump-to-s3:latest-pg${{ matrix.postgres-version }}
-            ${{ env.REGISTRY }}/${{ github.repository }}/pg-dump-to-s3:${{ steps.version.outputs.version }}-pg${{ matrix.postgres-version }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/pg-dump-to-s3:latest-pg${{ matrix.postgres-version }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/pg-dump-to-s3:${{ steps.version.outputs.version }}-pg${{ matrix.postgres-version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
