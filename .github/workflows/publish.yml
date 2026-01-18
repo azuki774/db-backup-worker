@@ -29,6 +29,9 @@ jobs:
       github.event.inputs.image_type == 'all' ||
       github.event.inputs.image_type == 'postgres'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         postgres-version:
