@@ -4,11 +4,9 @@ PostgreSQL データベースのバックアップを取得し、Amazon S3 に�
 
 ## タグ命名規則
 
-- `ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg14` - PostgreSQL 14 版
-- `ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg15` - PostgreSQL 15 版
-- `ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16` - PostgreSQL 16 版
-- `ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg17` - PostgreSQL 17 版
-- `ghcr.io/<repo>/pg-dump-to-s3:latest-pg16` - 最新版 (PostgreSQL 16)
+- `ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg18` - PostgreSQL 18 版（メジャーバージョン）
+- `ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg18.1` - PostgreSQL 18.1 版（フルバージョン）
+- `ghcr.io/<repo>/pg-dump-to-s3:latest-pg18` - 最新版 (PostgreSQL 18)
 
 ## 環境変数
 
@@ -46,7 +44,7 @@ docker run --rm \
   -e AWS_ACCESS_KEY_ID=AKIA... \
   -e AWS_SECRET_ACCESS_KEY=secret \
   -e AWS_REGION=us-east-1 \
-  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16
+  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg18
 ```
 
 ### IAM ロールを使用 (AWS EC2 / ECS / EKS)
@@ -63,7 +61,7 @@ docker run --rm \
   -e BUCKET_DIR=postgres/ \
   -e AWS_REGION=us-east-1 \
   --network host \
-  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16
+  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg18
 ```
 
 ### MinIO などの互換 S3 を使用
@@ -81,7 +79,7 @@ docker run --rm \
   -e BUCKET_URL=http://minio:9000 \
   -e AWS_ACCESS_KEY_ID=minioadmin \
   -e AWS_SECRET_ACCESS_KEY=minioadmin \
-  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16
+  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg18
 ```
 
 ### Discord 通知を有効化
@@ -100,7 +98,7 @@ docker run --rm \
   -e AWS_SECRET_ACCESS_KEY=secret \
   -e AWS_REGION=us-east-1 \
   -e DISCORD_WEBHOOK=https://discord.com/api/webhooks/... \
-  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg16
+  ghcr.io/<repo>/pg-dump-to-s3:v1.2.0-pg18
 ```
 
 ## バックアップ検証
@@ -132,4 +130,23 @@ docker run --rm \
 
 # 後片付け
 docker compose -f docker-compose.test.yml down -v
+```
+
+## リリース方法
+
+新しいバージョンをリリースするには、以下の形式でタグを作成してプッシュします：
+
+```bash
+# タグを作成（PostgreSQLバージョンは含めない）
+git tag pg-dump-to-s3-v0.0.5
+git push origin pg-dump-to-s3-v0.0.5
+```
+
+GitHub Actions により、以下の Docker イメージタグが自動的にビルド・プッシュされます：
+
+- `ghcr.io/<repo>/pg-dump-to-s3:latest-pg18` - 最新版（メジャーバージョン）
+- `ghcr.io/<repo>/pg-dump-to-s3:v0.0.5-pg18` - 指定バージョン（メジャーバージョン）
+- `ghcr.io/<repo>/pg-dump-to-s3:v0.0.5-pg18.1` - 指定バージョン（フルバージョン）
+
+> **Note**: タグ名には PostgreSQL のバージョンを含めないでください。ビルド時に自動的に PostgreSQL のメジャーバージョン（`18`）とフルバージョン（`18.1`）が付与されます。
 ```
