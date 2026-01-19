@@ -62,6 +62,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Extract PostgreSQL major version
+        id: pg_major
+        run: |
+          PG_MAJOR=$(echo "${{ matrix.postgres-version }}" | cut -d. -f1)
+          echo "version=${PG_MAJOR}" >> $GITHUB_OUTPUT
+          echo "PostgreSQL major version: ${PG_MAJOR}"
+
       - name: Build and push PostgreSQL image
         uses: docker/build-push-action@v5
         with:
@@ -71,7 +78,8 @@ jobs:
           build-args: |
             POSTGRES_VERSION=${{ matrix.postgres-version }}
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/pg-dump-to-s3:latest-pg${{ matrix.postgres-version }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/pg-dump-to-s3:latest-pg${{ steps.pg_major.outputs.version }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/pg-dump-to-s3:${{ steps.version.outputs.version }}-pg${{ steps.pg_major.outputs.version }}
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/pg-dump-to-s3:${{ steps.version.outputs.version }}-pg${{ matrix.postgres-version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
