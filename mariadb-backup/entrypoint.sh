@@ -1,17 +1,17 @@
 #!/bin/bash
 set -e
 
-# PostgreSQL Backup Worker
+# MariaDB Backup Worker
 #
 # Required Environment Variables:
 #   DB_HOST          - Database host (e.g., "localhost", "db.example.com")
-#   DB_PORT          - Database port (e.g., "5432")
-#   DB_USER          - Database user (e.g., "postgres")
+#   DB_PORT          - Database port (e.g., "3306")
+#   DB_USER          - Database user (e.g., "root")
 #   DB_PASSWORD      - Database password
 #   DB_NAME          - Database name to backup (e.g., "myapp_db")
 #   BACKUP_NAME      - Backup file name without extension (e.g., "mybackup", "daily_backup")
 #   BUCKET_NAME      - S3 bucket name (e.g., "my-backups")
-#   BUCKET_DIR       - S3 bucket directory/prefix (e.g., "postgres/20250117")
+#   BUCKET_DIR       - S3 bucket directory/prefix (e.g., "mariadb/20250117")
 #
 # Optional Environment Variables:
 #   AWS_REGION       - AWS region (e.g., "us-east-1")
@@ -33,7 +33,7 @@ error_handler() {
     local exit_code=$?
     if [ ${exit_code} -ne 0 ] && [ ${BACKUP_SUCCESS} -eq 0 ]; then
         log_error "Backup process failed with exit code ${exit_code}"
-        send_discord_failure "${DB_NAME}" "PostgreSQL Backup Notification"
+        send_discord_failure "${DB_NAME}" "MariaDB Backup Notification"
     fi
 }
 
@@ -41,7 +41,7 @@ error_handler() {
 exit_handler() {
     local exit_code=$?
     if [ ${exit_code} -eq 0 ] && [ ${BACKUP_SUCCESS} -eq 1 ]; then
-        send_discord_success "${DB_NAME}" "${BACKUP_FILE}" "${S3_URI}" "${BACKUP_SIZE}" "PostgreSQL Backup Notification"
+        send_discord_success "${DB_NAME}" "${BACKUP_FILE}" "${S3_URI}" "${BACKUP_SIZE}" "MariaDB Backup Notification"
     fi
 }
 
@@ -49,7 +49,7 @@ exit_handler() {
 trap 'error_handler' ERR
 trap 'exit_handler' EXIT
 
-log_info "Starting PostgreSQL backup to S3..."
+log_info "Starting MariaDB backup to S3..."
 
 if [ "${SKIP_S3_UPLOAD}" = "true" ]; then
     check_required_vars "DB_HOST" "DB_PORT" "DB_USER" "DB_PASSWORD" "DB_NAME" "BACKUP_NAME"

@@ -55,6 +55,7 @@ send_discord_notification() {
     local message="$1"
     local color="$2"  # decimal color (e.g., 3066993 for green, 15158332 for red)
     local content="$3"  # optional content field for mentions
+    local title="${4:-Database Backup Notification}"  # optional custom title
     
     if [ -z "${DISCORD_WEBHOOK}" ]; then
         log_debug "DISCORD_WEBHOOK not set, skipping notification"
@@ -67,7 +68,7 @@ send_discord_notification() {
 {
   "content": "${content}",
   "embeds": [{
-    "title": "PostgreSQL Backup Notification",
+    "title": "${title}",
     "description": "${message}",
     "color": ${color},
     "timestamp": "${timestamp}"
@@ -92,6 +93,7 @@ send_discord_success() {
     local backup_file="$2"
     local s3_uri="$3"
     local file_size="$4"
+    local title="${5:-Database Backup Notification}"  # optional custom title
     
     local message="✅ **Backup Successful**\n\n"
     message+="**Database:** \`${db_name}\`\n"
@@ -107,12 +109,13 @@ send_discord_success() {
         message+="**File Size:** ${size_mb} MB\n"
     fi
     
-    send_discord_notification "${message}" "3066993"  # Green color
+    send_discord_notification "${message}" "3066993" "" "${title}"  # Green color
 }
 
 # Send Discord failure notification
 send_discord_failure() {
     local db_name="$1"
+    local title="${2:-Database Backup Notification}"  # optional custom title
     
     local message="❌ **Backup Failed**\n\n"
     
@@ -122,5 +125,5 @@ send_discord_failure() {
     
     message+="Please check the logs for details."
     
-    send_discord_notification "${message}" "15158332" "@here"  # Red color with @here mention
+    send_discord_notification "${message}" "15158332" "@here" "${title}"  # Red color with @here mention
 }
