@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'pg-dump-to-s3-v*'
+      - 'mariadb-dump-to-s3-v*'
   workflow_dispatch:
     inputs:
       image_type:
@@ -14,8 +15,9 @@ on:
         options:
           - all
           - postgres
+          - mariadb
       version:
-        description: 'Version (e.g., v1.2.0-pg18.1)'
+        description: 'Version (e.g., v1.2.0-pg18.1 or v1.2.0-maria11.4)'
         required: true
         default: 'v1.2.0'
 
@@ -81,5 +83,66 @@ jobs:
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/pg-dump-to-s3:latest-pg${{ steps.pg_major.outputs.version }}
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/pg-dump-to-s3:${{ steps.version.outputs.version }}-pg${{ steps.pg_major.outputs.version }}
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/pg-dump-to-s3:${{ steps.version.outputs.version }}-pg${{ matrix.postgres-version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  publish-mariadb:
+    if: |
+      startsWith(github.ref, 'refs/tags/mariadb-dump-to-s3-v') ||
+      github.event.inputs.image_type == 'all' ||
+      github.event.inputs.image_type == 'mariadb'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        mariadb-version:
+          - '11.4'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag or input
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/mariadb-dump-to-s3-}
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Building version: ${VERSION}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract MariaDB major version
+        id: maria_major
+        run: |
+          MARIA_MAJOR=$(echo "${{ matrix.mariadb-version }}" | cut -d. -f1)
+          echo "version=${MARIA_MAJOR}" >> $GITHUB_OUTPUT
+          echo "MariaDB major version: ${MARIA_MAJOR}"
+
+      - name: Build and push MariaDB image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./mariadb-backup/Dockerfile
+          push: true
+          build-args: |
+            MARIADB_VERSION=${{ matrix.mariadb-version }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/mariadb-dump-to-s3:latest-maria${{ steps.maria_major.outputs.version }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/mariadb-dump-to-s3:${{ steps.version.outputs.version }}-maria${{ steps.maria_major.outputs.version }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/mariadb-dump-to-s3:${{ steps.version.outputs.version }}-maria${{ matrix.mariadb-version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

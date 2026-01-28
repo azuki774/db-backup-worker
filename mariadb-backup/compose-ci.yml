@@ -1,0 +1,29 @@
+services:
+  test-mariadb:
+    image: mariadb:11.4-noble
+    environment:
+      MARIADB_ROOT_PASSWORD: testpass
+      MARIADB_DATABASE: testdb
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  test-backup:
+    build:
+      context: ..
+      dockerfile: mariadb-backup/Dockerfile
+      args:
+        MARIADB_VERSION: 11.4
+    environment:
+      DB_HOST: test-mariadb
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: testpass
+      DB_NAME: testdb
+      BACKUP_NAME: test_backup
+      SKIP_S3_UPLOAD: true
+    depends_on:
+      test-mariadb:
+        condition: service_healthy
